@@ -10,19 +10,14 @@ using Microsoft.Data.SqlClient;
 
 namespace Demo_Core_Api.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class EmployeeController : ControllerBase
+  
+    public class Employee_Services
     {
-        public IConfiguration _configuration { get; }
         SqlConnection con;
-        Employee_Services services;
+        public Employee_Services(SqlConnection sqlConnection)
 
-        public EmployeeController(IConfiguration configuration)
         {
-            _configuration = configuration;
-            con = new SqlConnection(_configuration.GetConnectionString("DefaultParkingConnection"));
-            services = new Employee_Services(con);
+            con = sqlConnection;
 
         }
 
@@ -32,7 +27,20 @@ namespace Demo_Core_Api.Controllers
             List<Employeecs> employees = new List<Employeecs>();
             try
             {
-               return new JsonResult(services.GetAllEmployee());
+                SqlCommand cmd = con.CreateCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = "SELECT * FROM Employeee";
+                con.Open();
+                SqlDataReader sdr = cmd.ExecuteReader();
+                while (sdr.Read())
+                {
+                    employees.Add(new Employeecs
+                    {
+                        empid = Convert.ToInt32(sdr["empid"]),
+                        empname = Convert.ToString(sdr["empname"]),
+                        EmailID = Convert.ToString(sdr["EmailID"])
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -45,45 +53,16 @@ namespace Demo_Core_Api.Controllers
             return new JsonResult(employees);
 
         }
-        //[HttpGet]
-        //public JsonResult GetEmployee(int id)
-        //{
-        //    List<Employee> employees = new List<Employee>();
-        //    try
-        //    {
-        //        SqlCommand cmd = con.CreateCommand();
-        //        cmd.CommandType = CommandType.Text;
-        //        cmd.CommandText = "SELECT * FROM tbl_Emp Where(ID="+id+");";
-        //        con.Open();
-        //        SqlDataReader sdr = cmd.ExecuteReader();
-        //        while (sdr.Read())
-        //        {
-        //            employees.Add(new Employee
-        //            {
-        //                Id = Convert.ToInt32(sdr["Id"]),
-        //                Name = Convert.ToString(sdr["Name"]),
-        //                Age = Convert.ToInt32(sdr["Age"])
-        //            });
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return new JsonResult(ex.Message);
-        //    }
-        //    finally
-        //    {
-        //        con.Close();
-        //    }
-        //    return new JsonResult(employees);
-
-        //}
         [HttpPost]
         public Boolean AddEmployee(Employeecs employee)
         {
             try
             {
-
-                 new JsonResult(services.AddEmployee(employee));
+                SqlCommand cmd = con.CreateCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = "Insert into Employeee(empid,empname,EmailID) values(" + employee.empid + ",'" + employee.empname + "','" + employee.EmailID + "')";
+                con.Open();
+                cmd.ExecuteNonQuery();
                 return true;
             }
             catch (Exception ex)
@@ -101,7 +80,13 @@ namespace Demo_Core_Api.Controllers
         {
             try
             {
-                new JsonResult(services.UpdateEmployee(id,employee));
+                SqlCommand cmd = con.CreateCommand();
+                cmd.CommandType = CommandType.Text;
+                //cmd.CommandText = "Update Employeee Set Name='" + employee.empname + "', Email= '" + employee.EmailID +"'  "Where(ID=" + id + ");";
+
+                cmd.CommandText = "Update Employeee Set empname='" + employee.empname + "',EmailID= '" + employee.EmailID + "' Where(empid= " + id + ");";
+                con.Open();
+                cmd.ExecuteNonQuery();
                 return true;
             }
             catch (Exception ex)
@@ -119,7 +104,11 @@ namespace Demo_Core_Api.Controllers
         {
             try
             {
-                new JsonResult(services.DeleteEmployee(id));
+                SqlCommand cmd = con.CreateCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = "Delete from Employeee Where(empid=" + id + ");";
+                con.Open();
+                cmd.ExecuteNonQuery();
                 return true;
             }
             catch (Exception ex)
